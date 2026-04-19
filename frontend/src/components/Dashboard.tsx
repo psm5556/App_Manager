@@ -28,21 +28,39 @@ export default function Dashboard() {
   })
 
   useWebSocket((msg: unknown) => {
-    const m = msg as { type: string }
-    const refetchTypes = ['app_created','app_updated','app_deleted','app_started','app_stopped','bulk_start','bulk_stop','status_poll']
-    if (refetchTypes.includes(m.type)) {
-      qc.invalidateQueries({ queryKey: ['apps'] })
+    const m = msg as { type: string; data?: Record<string, { status: string; pid: number | null; uptime: number | null }> }
+    if (m.type === 'status_poll' && m.data) {
+      qc.setQueryData<App[]>(['apps'], (old) => {
+        if (!old) return old
+        return old.map(app => {
+          const rt = m.data![app.id]
+          return rt ? { ...app, status: rt.status as App['status'], pid: rt.pid, uptime: rt.uptime } : app
+        })
+      })
+    } else {
+      const refetchTypes = ['app_created','app_updated','app_deleted','app_started','app_stopped','bulk_start','bulk_stop']
+      if (refetchTypes.includes(m.type)) {
+        qc.invalidateQueries({ queryKey: ['apps'] })
+      }
     }
   })
 
   const createMut = useMutation({
     mutationFn: (body: AppCreate) => api.createApp(body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['apps'] }); setShowModal(false) },
+    onSuccess: (newApp) => {
+      qc.setQueryData<App[]>(['apps'], (old = []) => [...old, newApp])
+      setShowModal(false)
+    },
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, body }: { id: string; body: AppUpdate }) => api.updateApp(id, body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['apps'] }); setEditApp(undefined) },
+    onSuccess: (updatedApp) => {
+      qc.setQueryData<App[]>(['apps'], (old = []) =>
+        old.map(a => a.id === updatedApp.id ? updatedApp : a)
+      )
+      setEditApp(undefined)
+    },
   })
 
   const deleteMut = useMutation({
