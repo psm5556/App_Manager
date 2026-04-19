@@ -1,8 +1,7 @@
 @echo off
-REM 프론트엔드 빌드 -> backend/static 출력
+setlocal
 
-set SCRIPT_DIR=%~dp0
-set FRONTEND_DIR=%SCRIPT_DIR%..\frontend
+set FRONTEND_DIR=%~dp0..\frontend
 
 cd /d "%FRONTEND_DIR%"
 

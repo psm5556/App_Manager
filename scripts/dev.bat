@@ -1,9 +1,8 @@
 @echo off
-REM Windows 개발 모드: 백엔드 + 프론트엔드 동시 실행
+setlocal
 
-set SCRIPT_DIR=%~dp0
-set BACKEND_DIR=%SCRIPT_DIR%..\backend
-set FRONTEND_DIR=%SCRIPT_DIR%..\frontend
+set BACKEND_DIR=%~dp0..\backend
+set FRONTEND_DIR=%~dp0..\frontend
 
 cd /d "%BACKEND_DIR%"
 
@@ -17,7 +16,7 @@ if not exist "venv" (
 )
 
 echo Starting backend on port 7000...
-start "AppManager-Backend" cmd /k "cd /d %BACKEND_DIR% && venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 7000 --reload"
+start "AppManager-Backend" cmd /k "cd /d %BACKEND_DIR% && call venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 7000 --reload"
 
 cd /d "%FRONTEND_DIR%"
 
@@ -31,7 +30,7 @@ start "AppManager-Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev"
 
 echo.
 echo Backend  : http://localhost:7000
-echo Frontend : http://localhost:5173  (개발용 - 여기로 접속)
+echo Frontend : http://localhost:5173  (connect here during dev)
 echo.
-echo 두 개의 터미널 창이 열렸습니다. 창을 닫으면 서버가 종료됩니다.
+echo Servers are running in separate windows.
 pause
