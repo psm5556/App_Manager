@@ -86,28 +86,43 @@ if os.path.isdir(_STATIC_DIR):
 
 ---
 
-## Step 3 — `start_app.bat` 생성
+## Step 3 — `start_app.py` 생성 (Windows / Linux 공용)
 
 프로젝트 루트(`MyProject/`)에 생성:
+
+```python
+import subprocess
+import sys
+import os
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(ROOT, "frontend")
+BACKEND_DIR  = os.path.join(ROOT, "backend")
+
+print("[MyProject] Building frontend...")
+build = subprocess.run("npm run build", cwd=FRONTEND_DIR, shell=True)
+if build.returncode != 0:
+    print("[ERROR] Frontend build failed")
+    sys.exit(1)
+
+print("[MyProject] Starting backend on http://localhost:{PORT}")
+subprocess.run(
+    "uvicorn main:app --host 0.0.0.0 --port {PORT}",
+    cwd=BACKEND_DIR,
+    shell=True,
+)
+```
+
+> `{PORT}`와 `[MyProject]` 부분을 실제 값으로 변경하세요.
+
+**Windows에서 더블클릭으로 실행하려면** `start_app.bat`도 함께 생성:
 
 ```bat
 @echo off
 cd /d "%~dp0"
-
-echo [MyProject] Building frontend...
-cd frontend
-call npm run build
-if errorlevel 1 (
-    echo [ERROR] Frontend build failed
-    exit /b 1
-)
-
-echo [MyProject] Starting backend on http://localhost:{PORT}
-cd ..\backend
-uvicorn main:app --host 0.0.0.0 --port {PORT}
+python start_app.py
+pause
 ```
-
-> `{PORT}`와 `[MyProject]` 부분을 실제 값으로 변경하세요.
 
 ---
 
@@ -135,7 +150,7 @@ App Manager 대시보드에서 **앱 추가**:
 | 앱 타입 | `FastAPI + React` |
 | 폴더 경로 | `C:\...\MyProject` (프로젝트 루트) |
 | 포트 | `{PORT}` |
-| 시작 명령 | `start_app.bat` |
+| 시작 명령 | `python start_app.py` |
 | Conda 환경 | `base` (또는 해당 환경명) |
 
 ---
@@ -184,6 +199,7 @@ npm run dev
 - [ ] `frontend/vite.config.ts` — `build.outDir: '../backend/static'` 추가
 - [ ] `backend/main.py` — import 추가 (`FileResponse`, `JSONResponse`, `StaticFiles`, `os`)
 - [ ] `backend/main.py` — 정적 파일 서빙 코드 추가 (맨 끝)
-- [ ] `start_app.bat` — 프로젝트 루트에 생성, `{PORT}` 치환
+- [ ] `start_app.py` — 프로젝트 루트에 생성, `{PORT}` 치환 (Windows/Linux 공용)
+- [ ] `start_app.bat` — Windows 더블클릭용 (선택, `python start_app.py` 호출)
 - [ ] 초기 빌드 실행 (`cd frontend && npm install && npm run build`)
-- [ ] App Manager에 등록 (폴더: 프로젝트 루트, 시작 명령: `start_app.bat`)
+- [ ] App Manager에 등록 (폴더: 프로젝트 루트, 시작 명령: `python start_app.py`)
