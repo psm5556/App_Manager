@@ -137,8 +137,12 @@ def list_apps(db: Session = Depends(get_db)):
 
 @app.post("/api/apps", response_model=schemas.AppResponse, status_code=201)
 async def create_app(body: schemas.AppCreate, db: Session = Depends(get_db)):
-    obj = models.App(id=str(uuid4()), **body.model_dump())
+    data = body.model_dump()
+    data["conda_env"] = data.get("conda_env") or "base"
+    print(f"[create_app] conda_env={data['conda_env']!r}", flush=True)
+    obj = models.App(id=str(uuid4()), **data)
     db.add(obj); db.commit(); db.refresh(obj)
+    print(f"[create_app] saved conda_env={obj.conda_env!r}", flush=True)
     await wsm.broadcast({"type": "app_created"})
     return to_response(obj)
 
@@ -150,10 +154,13 @@ async def update_app(app_id: str, body: schemas.AppUpdate, db: Session = Depends
         raise HTTPException(404, "App not found")
     if pm.is_running(app_id):
         raise HTTPException(400, "실행 중인 앱은 수정할 수 없습니다. 먼저 중지하세요.")
-    for k, v in body.model_dump(exclude_unset=True).items():
+    updates = body.model_dump(exclude_unset=True)
+    print(f"[update_app] {app_id} updates={updates}", flush=True)
+    for k, v in updates.items():
         setattr(obj, k, v)
     obj.updated_at = datetime.now()
     db.commit(); db.refresh(obj)
+    print(f"[update_app] saved conda_env={obj.conda_env!r}", flush=True)
     await wsm.broadcast({"type": "app_updated", "id": app_id})
     return to_response(obj)
 
