@@ -1,8 +1,11 @@
 import subprocess
 import os
+import sys
 import signal
 from datetime import datetime
 from typing import Dict, Optional
+
+IS_WINDOWS = sys.platform == "win32"
 
 
 class ProcessInfo:
@@ -11,7 +14,7 @@ class ProcessInfo:
         self.log_path = log_path
         self.started_at = datetime.now()
         self.pid = proc.pid
-        self._log_file = proc.stdout   # stdout/stderr merged into log file
+        self._log_file = proc.stdout
 
 
 class ProcessManager:
@@ -28,26 +31,37 @@ class ProcessManager:
             raise RuntimeError(f"폴더가 존재하지 않습니다: {cwd}")
 
         log_path = os.path.join(self.log_dir, f"{app_id}.log")
-        log_file = open(log_path, "a", buffering=1)
+        log_file = open(log_path, "a", buffering=1, encoding="utf-8", errors="replace")
 
         header = (
             f"\n{'='*60}\n"
             f"Started : {datetime.now().isoformat()}\n"
             f"Command : {command}\n"
             f"CWD     : {cwd}\n"
+            f"Platform: {'Windows' if IS_WINDOWS else 'Linux'}\n"
             f"{'='*60}\n\n"
         )
         log_file.write(header)
         log_file.flush()
 
         try:
-            proc = subprocess.Popen(
-                ["bash", "-c", command],
-                cwd=cwd,
-                stdout=log_file,
-                stderr=log_file,
-                preexec_fn=os.setsid,   # new process group (Linux)
-            )
+            if IS_WINDOWS:
+                proc = subprocess.Popen(
+                    command,
+                    cwd=cwd,
+                    stdout=log_file,
+                    stderr=log_file,
+                    shell=True,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                )
+            else:
+                proc = subprocess.Popen(
+                    ["bash", "-c", command],
+                    cwd=cwd,
+                    stdout=log_file,
+                    stderr=log_file,
+                    preexec_fn=os.setsid,
+                )
         except Exception as exc:
             log_file.write(f"\n[ERROR] Failed to start: {exc}\n")
             log_file.close()
@@ -64,14 +78,26 @@ class ProcessManager:
         if not info:
             return
         try:
-            pgid = os.getpgid(info.proc.pid)
-            os.killpg(pgid, signal.SIGTERM)
-            try:
-                info.proc.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                os.killpg(pgid, signal.SIGKILL)
-                info.proc.wait()
-        except ProcessLookupError:
+            if IS_WINDOWS:
+                # taskkill /F /T kills the entire process tree on Windows
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(info.proc.pid)],
+                    capture_output=True,
+                )
+                try:
+                    info.proc.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    info.proc.kill()
+                    info.proc.wait()
+            else:
+                pgid = os.getpgid(info.proc.pid)
+                os.killpg(pgid, signal.SIGTERM)
+                try:
+                    info.proc.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    os.killpg(pgid, signal.SIGKILL)
+                    info.proc.wait()
+        except (ProcessLookupError, OSError):
             pass
         finally:
             self._close(app_id, info)
@@ -112,7 +138,7 @@ class ProcessManager:
         if not os.path.exists(log_path):
             return "(로그 없음)"
         try:
-            with open(log_path, "r", errors="replace") as f:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
                 all_lines = f.readlines()
             return "".join(all_lines[-lines:])
         except Exception as exc:
