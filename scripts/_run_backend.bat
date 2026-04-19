@@ -26,7 +26,8 @@ echo [Backend] Activating conda env: %CONDA_ENV%...
 call "%CONDA_ACTIVATE%" %CONDA_ENV%
 if errorlevel 1 ( echo [ERROR] conda activate failed. & pause & exit /b 1 )
 
-pip install -r requirements.txt -q
+echo [Backend] Installing dependencies...
+pip install --prefer-binary -r requirements.txt -q
 
 echo [Backend] Starting on port 7000...
 uvicorn main:app --host 0.0.0.0 --port 7000 --reload
