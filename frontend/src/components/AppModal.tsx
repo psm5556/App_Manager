@@ -16,6 +16,7 @@ export default function AppModal({ app, onSave, onClose }: Props) {
   const [port,         setPort]         = useState(String(app?.port ?? ''))
   const [startCommand, setStartCommand] = useState(app?.start_command ?? '')
   const [order,        setOrder]        = useState(String(app?.order ?? '0'))
+  const [condaEnv,     setCondaEnv]     = useState(app?.conda_env ?? 'base')
   const [saving,       setSaving]       = useState(false)
   const [error,        setError]        = useState('')
 
@@ -36,6 +37,7 @@ export default function AppModal({ app, onSave, onClose }: Props) {
         port: Number(port),
         start_command: startCommand.trim(),
         order: Number(order),
+        conda_env: condaEnv.trim() || 'base',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 실패')
@@ -92,6 +94,11 @@ export default function AppModal({ app, onSave, onClose }: Props) {
             <div className="col-span-2">
               <label className={labelCls}>시작 명령 *</label>
               <input className={inputCls} value={startCommand} onChange={e => setStartCommand(e.target.value)} placeholder="uvicorn main:app --port 8000" />
+            </div>
+
+            <div>
+              <label className={labelCls}>Conda 환경</label>
+              <input className={inputCls} value={condaEnv} onChange={e => setCondaEnv(e.target.value)} placeholder="base" />
             </div>
 
             <div>

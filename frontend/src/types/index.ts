@@ -7,6 +7,7 @@ export interface App {
   port: number
   start_command: string
   order: number
+  conda_env: string
   created_at: string
   updated_at: string
   // runtime
@@ -23,6 +24,7 @@ export interface AppCreate {
   port: number
   start_command: string
   order?: number
+  conda_env?: string
 }
 
 export interface AppUpdate {
@@ -33,4 +35,5 @@ export interface AppUpdate {
   port?: number
   start_command?: string
   order?: number
+  conda_env?: string
 }

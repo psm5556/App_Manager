@@ -11,6 +11,7 @@ class AppCreate(BaseModel):
     port: int
     start_command: str
     order: Optional[int] = 0
+    conda_env: Optional[str] = "base"
 
 
 class AppUpdate(BaseModel):
@@ -21,6 +22,7 @@ class AppUpdate(BaseModel):
     port: Optional[int] = None
     start_command: Optional[str] = None
     order: Optional[int] = None
+    conda_env: Optional[str] = None
 
 
 class AppResponse(BaseModel):
@@ -32,6 +34,7 @@ class AppResponse(BaseModel):
     port: int
     start_command: str
     order: int
+    conda_env: str = "base"
     created_at: datetime
     updated_at: datetime
     # runtime fields

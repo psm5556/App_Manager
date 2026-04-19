@@ -74,6 +74,10 @@ export default function AppCard({ app, onStart, onStop, onEdit, onDelete, onLogs
             {TYPE_LABEL[app.app_type] ?? app.app_type}
           </span>
         </div>
+        <div className="flex items-center gap-1 col-span-2 overflow-hidden">
+          <span className="opacity-60 flex-shrink-0">env</span>
+          <span className="truncate font-mono">{app.conda_env || 'base'}</span>
+        </div>
         {isRunning && app.pid && (
           <div className="flex items-center gap-1">
             <span className="opacity-60">PID</span>

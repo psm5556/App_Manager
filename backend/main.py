@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List
 
+from sqlalchemy import text
 from database import Base, SessionLocal, engine
 import models
 import schemas
@@ -105,6 +106,12 @@ async def _monitor():
 
 @app.on_event("startup")
 async def startup():
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE apps ADD COLUMN conda_env VARCHAR(100) DEFAULT 'base'"))
+            conn.commit()
+        except Exception:
+            pass  # column already exists
     asyncio.create_task(_monitor())
 
 
@@ -170,7 +177,7 @@ async def start_app(app_id: str, db: Session = Depends(get_db)):
     if pm.is_running(app_id):
         raise HTTPException(400, "이미 실행 중입니다.")
     try:
-        pid = pm.start(app_id, obj.start_command, obj.folder)
+        pid = pm.start(app_id, obj.start_command, obj.folder, obj.conda_env or "")
     except Exception as e:
         raise HTTPException(500, str(e))
     await wsm.broadcast({"type": "app_started", "id": app_id, "pid": pid})
@@ -196,7 +203,7 @@ async def start_all(db: Session = Depends(get_db)):
     for a in apps:
         if not pm.is_running(a.id):
             try:
-                pid = pm.start(a.id, a.start_command, a.folder)
+                pid = pm.start(a.id, a.start_command, a.folder, a.conda_env or "")
                 results.append({"id": a.id, "name": a.name, "ok": True, "pid": pid})
             except Exception as e:
                 results.append({"id": a.id, "name": a.name, "ok": False, "error": str(e)})

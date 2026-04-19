@@ -13,5 +13,6 @@ class App(Base):
     port         = Column(Integer, nullable=False)
     start_command= Column(Text, nullable=False)
     order        = Column(Integer, default=0)
+    conda_env    = Column(String(100), default="base", server_default="base")
     created_at   = Column(DateTime, server_default=func.now())
     updated_at   = Column(DateTime, server_default=func.now())

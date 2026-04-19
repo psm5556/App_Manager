@@ -8,6 +8,36 @@ from typing import Dict, Optional
 IS_WINDOWS = sys.platform == "win32"
 
 
+def _find_conda_activate() -> str:
+    home = os.path.expanduser("~")
+    local = os.environ.get("LOCALAPPDATA", "")
+    candidates = [
+        os.path.join(home,  "anaconda3",  "Scripts", "activate.bat"),
+        os.path.join(home,  "miniconda3", "Scripts", "activate.bat"),
+        os.path.join(local, "anaconda3",  "Scripts", "activate.bat"),
+        os.path.join(local, "miniconda3", "Scripts", "activate.bat"),
+        r"C:\ProgramData\anaconda3\Scripts\activate.bat",
+        r"C:\ProgramData\miniconda3\Scripts\activate.bat",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return ""
+
+
+def _build_command(command: str, conda_env: str) -> str:
+    env = (conda_env or "").strip()
+    if not env or env.lower() == "none":
+        return command
+    if IS_WINDOWS:
+        activate = _find_conda_activate()
+        if activate:
+            return f'call "{activate}" {env} && {command}'
+        return command
+    else:
+        return f'conda activate {env} && {command}'
+
+
 class ProcessInfo:
     def __init__(self, proc: subprocess.Popen, log_path: str):
         self.proc = proc
@@ -24,21 +54,24 @@ class ProcessManager:
         os.makedirs(log_dir, exist_ok=True)
 
     # ── start ──────────────────────────────────────────────────────────────────
-    def start(self, app_id: str, command: str, cwd: str) -> int:
+    def start(self, app_id: str, command: str, cwd: str, conda_env: str = "") -> int:
         if self.is_running(app_id):
             raise RuntimeError("이미 실행 중입니다.")
         if not os.path.isdir(cwd):
             raise RuntimeError(f"폴더가 존재하지 않습니다: {cwd}")
+
+        full_command = _build_command(command, conda_env)
 
         log_path = os.path.join(self.log_dir, f"{app_id}.log")
         log_file = open(log_path, "a", buffering=1, encoding="utf-8", errors="replace")
 
         header = (
             f"\n{'='*60}\n"
-            f"Started : {datetime.now().isoformat()}\n"
-            f"Command : {command}\n"
-            f"CWD     : {cwd}\n"
-            f"Platform: {'Windows' if IS_WINDOWS else 'Linux'}\n"
+            f"Started  : {datetime.now().isoformat()}\n"
+            f"Command  : {command}\n"
+            f"Conda env: {conda_env or '(none)'}\n"
+            f"CWD      : {cwd}\n"
+            f"Platform : {'Windows' if IS_WINDOWS else 'Linux'}\n"
             f"{'='*60}\n\n"
         )
         log_file.write(header)
@@ -47,7 +80,7 @@ class ProcessManager:
         try:
             if IS_WINDOWS:
                 proc = subprocess.Popen(
-                    command,
+                    full_command,
                     cwd=cwd,
                     stdout=log_file,
                     stderr=log_file,
@@ -56,7 +89,7 @@ class ProcessManager:
                 )
             else:
                 proc = subprocess.Popen(
-                    ["bash", "-c", command],
+                    ["bash", "-c", full_command],
                     cwd=cwd,
                     stdout=log_file,
                     stderr=log_file,
@@ -79,7 +112,6 @@ class ProcessManager:
             return
         try:
             if IS_WINDOWS:
-                # taskkill /F /T kills the entire process tree on Windows
                 subprocess.run(
                     ["taskkill", "/F", "/T", "/PID", str(info.proc.pid)],
                     capture_output=True,
