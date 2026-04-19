@@ -128,6 +128,17 @@ async def ws_endpoint(websocket: WebSocket):
         wsm.disconnect(websocket)
 
 
+# ── Debug ─────────────────────────────────────────────────────────────────────
+@app.get("/api/debug")
+def debug_info(db: Session = Depends(get_db)):
+    from sqlalchemy import text as t
+    rows = db.execute(t("SELECT id, name, conda_env FROM apps")).fetchall()
+    return {
+        "apps_raw": [{"id": r[0][:8], "name": r[1], "conda_env": r[2]} for r in rows],
+        "model_columns": [c.name for c in models.App.__table__.columns],
+    }
+
+
 # ── Apps CRUD ─────────────────────────────────────────────────────────────────
 @app.get("/api/apps", response_model=List[schemas.AppResponse])
 def list_apps(db: Session = Depends(get_db)):
