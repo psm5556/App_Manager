@@ -1,8 +1,12 @@
 @echo off
 setlocal
 
-set BACKEND_DIR=%~dp0..\backend
-set FRONTEND_DIR=%~dp0..\frontend
+for %%i in ("%~dp0..") do set ROOT=%%~fi
+set BACKEND_DIR=%ROOT%\backend
+set FRONTEND_DIR=%ROOT%\frontend
+
+echo BACKEND : %BACKEND_DIR%
+echo FRONTEND: %FRONTEND_DIR%
 
 cd /d "%BACKEND_DIR%"
 
@@ -16,7 +20,7 @@ if not exist "venv" (
 )
 
 echo Starting backend on port 7000...
-start "AppManager-Backend" cmd /k "cd /d %BACKEND_DIR% && call venv\Scripts\activate && uvicorn main:app --host 0.0.0.0 --port 7000 --reload"
+start "AppManager-Backend" cmd /k "cd /d "%BACKEND_DIR%" ^&^& call venv\Scripts\activate.bat ^&^& uvicorn main:app --host 0.0.0.0 --port 7000 --reload"
 
 cd /d "%FRONTEND_DIR%"
 
@@ -26,11 +30,11 @@ if not exist "node_modules" (
 )
 
 echo Starting frontend dev server on port 5173...
-start "AppManager-Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev"
+start "AppManager-Frontend" cmd /k "cd /d "%FRONTEND_DIR%" ^&^& npm run dev"
 
 echo.
 echo Backend  : http://localhost:7000
-echo Frontend : http://localhost:5173  (connect here during dev)
+echo Frontend : http://localhost:5173
 echo.
 echo Servers are running in separate windows.
 pause

@@ -1,7 +1,10 @@
 @echo off
 setlocal
 
-set BACKEND_DIR=%~dp0..\backend
+for %%i in ("%~dp0..") do set ROOT=%%~fi
+set BACKEND_DIR=%ROOT%\backend
+
+echo BACKEND: %BACKEND_DIR%
 
 cd /d "%BACKEND_DIR%"
 

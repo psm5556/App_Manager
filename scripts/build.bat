@@ -1,7 +1,10 @@
 @echo off
 setlocal
 
-set FRONTEND_DIR=%~dp0..\frontend
+for %%i in ("%~dp0..") do set ROOT=%%~fi
+set FRONTEND_DIR=%ROOT%\frontend
+
+echo FRONTEND: %FRONTEND_DIR%
 
 cd /d "%FRONTEND_DIR%"
 
