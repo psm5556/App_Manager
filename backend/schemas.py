@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 from typing import Optional
 
@@ -43,3 +43,8 @@ class AppResponse(BaseModel):
     uptime: Optional[int] = None     # seconds
 
     model_config = {"from_attributes": True}
+
+    @field_validator("conda_env", mode="before")
+    @classmethod
+    def coerce_conda_env(cls, v: object) -> str:
+        return v if v is not None else "base"

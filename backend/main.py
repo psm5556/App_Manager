@@ -112,6 +112,8 @@ async def startup():
             conn.commit()
         except Exception:
             pass  # column already exists
+        conn.execute(text("UPDATE apps SET conda_env = 'base' WHERE conda_env IS NULL"))
+        conn.commit()
     asyncio.create_task(_monitor())
 
 
