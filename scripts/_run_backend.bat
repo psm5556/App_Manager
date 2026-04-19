@@ -8,9 +8,23 @@ rem ==============================================
 
 cd /d "%BACKEND_DIR%"
 
+rem Find conda activate.bat in common locations
+set CONDA_ACTIVATE=
+if exist "%USERPROFILE%\anaconda3\Scripts\activate.bat"   set CONDA_ACTIVATE=%USERPROFILE%\anaconda3\Scripts\activate.bat
+if exist "%USERPROFILE%\miniconda3\Scripts\activate.bat"  set CONDA_ACTIVATE=%USERPROFILE%\miniconda3\Scripts\activate.bat
+if exist "%LOCALAPPDATA%\anaconda3\Scripts\activate.bat"  set CONDA_ACTIVATE=%LOCALAPPDATA%\anaconda3\Scripts\activate.bat
+if exist "%LOCALAPPDATA%\miniconda3\Scripts\activate.bat" set CONDA_ACTIVATE=%LOCALAPPDATA%\miniconda3\Scripts\activate.bat
+if exist "C:\ProgramData\anaconda3\Scripts\activate.bat"  set CONDA_ACTIVATE=C:\ProgramData\anaconda3\Scripts\activate.bat
+if exist "C:\ProgramData\miniconda3\Scripts\activate.bat" set CONDA_ACTIVATE=C:\ProgramData\miniconda3\Scripts\activate.bat
+
+if "%CONDA_ACTIVATE%"=="" (
+    echo [ERROR] conda not found. Please set CONDA_ACTIVATE manually in this file.
+    pause & exit /b 1
+)
+
 echo [Backend] Activating conda env: %CONDA_ENV%...
-call conda activate %CONDA_ENV%
-if errorlevel 1 ( echo [ERROR] conda activate failed. Is conda in PATH? & pause & exit /b 1 )
+call "%CONDA_ACTIVATE%" %CONDA_ENV%
+if errorlevel 1 ( echo [ERROR] conda activate failed. & pause & exit /b 1 )
 
 pip install -r requirements.txt -q
 
