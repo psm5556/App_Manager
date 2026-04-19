@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.db
+*.db-shm
+*.db-wal
+node_modules/
+dist/
+.vite/
+logs/
+.env
+.DS_Store
+Thumbs.db
