@@ -3,7 +3,7 @@ for %%i in ("%~dp0..") do set ROOT=%%~fi
 set BACKEND_DIR=%ROOT%\backend
 
 rem ===== conda env name (change if needed) =====
-set CONDA_ENV=base
+set CONDA_ENV=SPDM
 rem ==============================================
 
 cd /d "%BACKEND_DIR%"
